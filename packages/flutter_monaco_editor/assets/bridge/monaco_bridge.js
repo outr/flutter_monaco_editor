@@ -21,6 +21,10 @@
     _emit: null,
     _editors: Object.create(null),
     _nextEditorId: 1,
+    _providers: Object.create(null),         // providerId → Monaco IDisposable
+    _pendingRequests: Object.create(null),   // requestId → {resolve, reject}
+    _nextRequestId: 1,
+    _providerTimeoutMs: 8000,
 
     setEmitter: function (fn) { this._emit = fn; },
 
@@ -329,6 +333,156 @@
     return null;
   };
 
+  // ---------------------------------------------------------------------
+  // Language providers — IntelliSense wiring
+  // ---------------------------------------------------------------------
+
+  function _askDart(eventType, providerId, model, position, extra) {
+    var requestId = 'req-' + (bridge._nextRequestId++);
+    return new Promise(function (resolve, reject) {
+      bridge._pendingRequests[requestId] = { resolve: resolve, reject: reject };
+      var payload = {
+        providerId: providerId,
+        requestId: requestId,
+        uri: model.uri.toString(),
+        languageId: model.getLanguageId(),
+        value: model.getValue(),
+        line: position.lineNumber,
+        column: position.column,
+      };
+      if (extra) for (var k in extra) payload[k] = extra[k];
+      bridge.emit(eventType, payload);
+
+      setTimeout(function () {
+        var pending = bridge._pendingRequests[requestId];
+        if (pending) {
+          delete bridge._pendingRequests[requestId];
+          reject(new Error(eventType + ' timed out after ' + bridge._providerTimeoutMs + 'ms'));
+        }
+      }, bridge._providerTimeoutMs);
+    });
+  }
+
+  handlers['languages.respond'] = function (args) {
+    var pending = bridge._pendingRequests[args.requestId];
+    if (!pending) return null;
+    delete bridge._pendingRequests[args.requestId];
+    if (args.error) {
+      pending.reject(new Error(args.error));
+    } else {
+      pending.resolve(args.result);
+    }
+    return null;
+  };
+
+  handlers['languages.unregisterProvider'] = function (args) {
+    var d = bridge._providers[args.providerId];
+    if (d && typeof d.dispose === 'function') {
+      try { d.dispose(); } catch (e) { console.error(e); }
+    }
+    delete bridge._providers[args.providerId];
+    return null;
+  };
+
+  handlers['languages.registerCompletionProvider'] = function (args) {
+    // eslint-disable-next-line no-undef
+    var d = monaco.languages.registerCompletionItemProvider(args.languageId, {
+      triggerCharacters: args.triggerCharacters || [],
+      provideCompletionItems: function (model, position, context) {
+        return _askDart(
+          'language.completion.request', args.providerId, model, position,
+          {
+            context: {
+              triggerKind: context.triggerKind,
+              triggerCharacter: context.triggerCharacter || null,
+            },
+          }
+        ).then(function (result) {
+          if (!result) return { suggestions: [] };
+          return {
+            suggestions: (result.suggestions || []).map(_toMonacoCompletionItem),
+            incomplete: !!result.incomplete,
+          };
+        });
+      },
+    });
+    bridge._providers[args.providerId] = d;
+    return null;
+  };
+
+  handlers['languages.registerHoverProvider'] = function (args) {
+    // eslint-disable-next-line no-undef
+    var d = monaco.languages.registerHoverProvider(args.languageId, {
+      provideHover: function (model, position) {
+        return _askDart(
+          'language.hover.request', args.providerId, model, position
+        ).then(function (result) {
+          if (!result) return null;
+          return {
+            contents: result.contents || [],
+            range: result.range ? _toMonacoRange(result.range) : undefined,
+          };
+        });
+      },
+    });
+    bridge._providers[args.providerId] = d;
+    return null;
+  };
+
+  handlers['languages.registerSignatureHelpProvider'] = function (args) {
+    // eslint-disable-next-line no-undef
+    var d = monaco.languages.registerSignatureHelpProvider(args.languageId, {
+      signatureHelpTriggerCharacters: args.triggerCharacters || [],
+      signatureHelpRetriggerCharacters: args.retriggerCharacters || [],
+      provideSignatureHelp: function (model, position, token, context) {
+        return _askDart(
+          'language.signatureHelp.request', args.providerId, model, position,
+          {
+            context: {
+              triggerKind: context.triggerKind,
+              triggerCharacter: context.triggerCharacter || null,
+              isRetrigger: !!context.isRetrigger,
+            },
+          }
+        ).then(function (result) {
+          if (!result) return null;
+          return {
+            value: {
+              signatures: result.signatures || [],
+              activeSignature: result.activeSignature || 0,
+              activeParameter: result.activeParameter || 0,
+            },
+            dispose: function () {},
+          };
+        });
+      },
+    });
+    bridge._providers[args.providerId] = d;
+    return null;
+  };
+
+  handlers['languages.registerDefinitionProvider'] = function (args) {
+    // eslint-disable-next-line no-undef
+    var d = monaco.languages.registerDefinitionProvider(args.languageId, {
+      provideDefinition: function (model, position) {
+        return _askDart(
+          'language.definition.request', args.providerId, model, position
+        ).then(function (result) {
+          if (!result) return null;
+          return (Array.isArray(result) ? result : [result]).map(function (loc) {
+            return {
+              // eslint-disable-next-line no-undef
+              uri: monaco.Uri.parse(loc.uri),
+              range: _toMonacoRange(loc.range),
+            };
+          });
+        });
+      },
+    });
+    bridge._providers[args.providerId] = d;
+    return null;
+  };
+
   handlers['editor.trigger'] = function (args) {
     _entry(args.editorId).editor.trigger(
       args.source || 'flutter_monaco_editor',
@@ -365,6 +519,23 @@
       endLineNumber: r.endLine,
       endColumn: r.endColumn,
     };
+  }
+
+  function _toMonacoCompletionItem(item) {
+    var out = {
+      label: item.label,
+      kind: item.kind,
+      insertText: item.insertText,
+      insertTextRules: item.insertTextRules || 0,
+    };
+    if (item.detail != null) out.detail = item.detail;
+    if (item.documentation != null) out.documentation = item.documentation;
+    if (item.sortText != null) out.sortText = item.sortText;
+    if (item.filterText != null) out.filterText = item.filterText;
+    if (item.preselect != null) out.preselect = item.preselect;
+    if (item.commitCharacters != null) out.commitCharacters = item.commitCharacters;
+    if (item.range) out.range = _toMonacoRange(item.range);
+    return out;
   }
 
   function _toMonacoMarker(m) {
