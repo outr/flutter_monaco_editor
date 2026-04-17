@@ -75,10 +75,84 @@
 
   var handlers = Object.create(null);
 
+  // ---------------------------------------------------------------------
+  // dart2js interop fix.
+  //
+  // The Dart compiler (dart2js) adds enumerable tear-off shims like $0, $1,
+  // $1$1 to Function.prototype. Monaco 0.55's bundle has a module-copy
+  // helper that iterates `for (const n in S)` over the AMD `require`
+  // function and expects `Object.getOwnPropertyDescriptor(S, n)` to be
+  // defined for every iterated key. For *inherited* enumerable properties
+  // from Function.prototype, GOPD returns undefined and Monaco crashes on
+  // `r.get`.
+  //
+  // Two-part fix:
+  //   1. Hide any currently-present $N on Function.prototype (cheap).
+  //   2. Patch Object.getOwnPropertyDescriptor to synthesize a descriptor
+  //      for inherited enumerable properties so the Monaco module-copy
+  //      still works if dart2js adds more $N later. The synthesized
+  //      descriptor is value/enumerable/configurable/writable; Monaco's
+  //      helper takes the non-accessor branch and copies the value — which
+  //      is fine, since these are plain methods.
+  // ---------------------------------------------------------------------
+  function _sanitizeFunctionPrototype() {
+    try {
+      var fp = Function.prototype;
+      var names = Object.getOwnPropertyNames(fp);
+      for (var i = 0; i < names.length; i++) {
+        var k = names[i];
+        if (/^\$/.test(k)) {
+          var d = Object.getOwnPropertyDescriptor(fp, k);
+          if (d && d.enumerable) {
+            Object.defineProperty(fp, k, {
+              value: d.value,
+              writable: d.writable !== false,
+              enumerable: false,
+              configurable: d.configurable !== false,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[monacoBridge] Function.prototype sanitize failed:', e);
+    }
+
+    // Install the GOPD safety net. Idempotent; keyed via a marker so a
+    // reloaded bridge script doesn't double-wrap.
+    try {
+      if (!Object.getOwnPropertyDescriptor.__fmePatched) {
+        var orig = Object.getOwnPropertyDescriptor;
+        var patched = function (obj, key) {
+          var d = orig(obj, key);
+          if (d !== undefined) return d;
+          // For inherited enumerable keys (seen via for-in), synthesize
+          // a data descriptor so module-copy helpers don't crash.
+          try {
+            if (obj != null && key in obj) {
+              return {
+                value: obj[key],
+                writable: true,
+                enumerable: true,
+                configurable: true,
+              };
+            }
+          } catch (e) { /* fall through */ }
+          return undefined;
+        };
+        patched.__fmePatched = true;
+        Object.getOwnPropertyDescriptor = patched;
+      }
+    } catch (e) {
+      console.warn('[monacoBridge] GOPD patch failed:', e);
+    }
+  }
+
   handlers['bridge.init'] = function (args) {
     return new Promise(function (resolve, reject) {
       if (bridge._ready) { resolve(); return; }
       if (!args || !args.vsPath) { reject(new Error('bridge.init: vsPath required')); return; }
+
+      _sanitizeFunctionPrototype();
 
       var script = document.createElement('script');
       script.src = args.vsPath + '/loader.js';

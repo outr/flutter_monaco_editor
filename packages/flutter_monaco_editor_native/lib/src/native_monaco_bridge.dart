@@ -25,18 +25,28 @@ class NativeMonacoBridge implements MonacoBridge {
 
   static NativeMonacoBridge? _shared;
 
-  /// Returns the process-shared bridge — first-created wins. Subsequent
-  /// calls return the same instance. Individual editors may still create
-  /// their own bridge via [NativeMonacoBridge.create] for isolation.
+  /// Returns the "shared" bridge for process-global APIs — language
+  /// providers ([MonacoLanguages]), theme registration ([MonacoThemes]).
+  /// On native, each editor widget has its own WebView, so these global
+  /// APIs operate only on the first-created bridge. Document accordingly
+  /// when using them in a multi-editor native UI.
+  ///
+  /// If no widget has created a bridge yet, one is created on demand
+  /// (headless — no attached editor). The first widget to mount will
+  /// adopt it if it's still around.
   static Future<NativeMonacoBridge> instance() async {
-    return _shared ??= await create();
+    final existing = _shared;
+    if (existing != null && !existing._disposed) return existing;
+    return create();
   }
 
   /// Create a new, isolated bridge + WebView host. Each call yields a
-  /// fresh Monaco runtime.
+  /// fresh Monaco runtime — this is what each [NativeMonacoPlatformView]
+  /// uses, giving one editor per WebView.
   static Future<NativeMonacoBridge> create() async {
     final bridge = NativeMonacoBridge._();
     await bridge._bootstrap();
+    _shared ??= bridge;
     return bridge;
   }
 

@@ -52,10 +52,15 @@ class _NativeMonacoPlatformViewState extends State<NativeMonacoPlatformView> {
   }
 
   Future<void> _initialize() async {
-    // Use the shared bridge if one exists (so language providers registered
-    // globally also apply here); otherwise create a dedicated one.
-    final bridge = await NativeMonacoBridge.instance();
-    if (!mounted) return;
+    // One fresh bridge = one WebView = one Monaco runtime per widget.
+    // The first bridge created also becomes the shared one used by
+    // global APIs (MonacoLanguages / MonacoThemes) — see
+    // NativeMonacoBridge.instance().
+    final bridge = await NativeMonacoBridge.create();
+    if (!mounted) {
+      unawaited(bridge.dispose());
+      return;
+    }
     _bridge = bridge;
 
     final editorId = await bridge.invoke('editor.create', {
@@ -73,9 +78,14 @@ class _NativeMonacoPlatformViewState extends State<NativeMonacoPlatformView> {
     _onChangedSub?.cancel();
     final bridge = _bridge;
     final editorId = _editorId;
-    if (bridge != null && editorId != null) {
-      widget.controller.detach();
-      unawaited(bridge.invoke('editor.dispose', {'editorId': editorId}));
+    if (bridge != null) {
+      if (editorId != null) {
+        widget.controller.detach();
+        unawaited(bridge.invoke('editor.dispose', {'editorId': editorId}));
+      }
+      // The bridge owns its WebView — tear it down with the widget so we
+      // don't leak WebViews in long-lived IDE sessions.
+      unawaited(bridge.dispose());
     }
     super.dispose();
   }
