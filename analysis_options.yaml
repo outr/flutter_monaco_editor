@@ -1,4 +1,7 @@
-include: package:flutter_lints/flutter.yaml
+# Base analyzer config for this repository.
+#
+# The flutter_lints include lives in each package's analysis_options.yaml
+# because it's only resolvable from a pubspec that depends on flutter_lints.
 
 analyzer:
   language:

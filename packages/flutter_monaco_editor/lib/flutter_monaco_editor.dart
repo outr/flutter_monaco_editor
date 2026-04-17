@@ -1,7 +1,8 @@
 /// A complete Flutter wrapper for Monaco Editor.
 ///
-/// This library is under active development. The public API surface is defined
-/// in [PLAN.md](../../../PLAN.md) and rolls out phase-by-phase.
+/// Public API is rolling out phase-by-phase; see [PLAN.md](../../../PLAN.md).
 library;
 
+export 'src/bridge/bridge.dart';
+export 'src/monaco_editor.dart';
 export 'src/monaco_version.dart';

@@ -18,25 +18,48 @@ class ExampleApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  static const String _initialCode = '''
+// flutter_monaco_editor — Phase 1.2 preview
+// Bundled Monaco: $monacoVersion
+void main() {
+  final editor = 'Monaco';
+  print('Hello from \$editor!');
+}
+''';
+
+  int _charCount = _initialCode.length;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('flutter_monaco_editor')),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Editor will render here once Phase 1.2 lands.',
-              textAlign: TextAlign.center,
+      appBar: AppBar(
+        title: const Text('flutter_monaco_editor'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(24),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, bottom: 6),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Monaco $monacoVersion  •  $_charCount chars',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
             ),
-            SizedBox(height: 12),
-            Text('Bundled Monaco: $monacoVersion'),
-          ],
+          ),
         ),
+      ),
+      body: MonacoEditor(
+        initialValue: _initialCode,
+        language: 'dart',
+        onChanged: (value) => setState(() => _charCount = value.length),
       ),
     );
   }

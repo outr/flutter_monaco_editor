@@ -25,6 +25,7 @@ dev_dependencies:
 
 flutter:
   assets:
+    - assets/bridge/
     - assets/monaco-min/vs/
     - assets/monaco-min/vs/assets/
     - assets/monaco-min/vs/basic-languages/

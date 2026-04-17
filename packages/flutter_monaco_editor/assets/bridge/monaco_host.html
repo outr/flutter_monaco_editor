@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>flutter_monaco_editor host</title>
+<style>
+  html, body, #monaco-root { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #1e1e1e; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+</style>
+</head>
+<body>
+<div id="monaco-root"></div>
+<script src="./monaco_bridge.js"></script>
+<script>
+  // Native transport will install its own emitter on monacoBridge.setEmitter
+  // (typically postMessage to a JavaScriptChannel) before calling bridge.init.
+  // This file is a stub host for Phase 4 — see PLAN.md.
+</script>
+</body>
+</html>
