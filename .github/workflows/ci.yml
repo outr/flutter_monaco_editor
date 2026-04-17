@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  analyze-and-test:
+  main-package:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -21,3 +21,19 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze
       - run: flutter test
+      - run: flutter build web --release
+        working-directory: packages/flutter_monaco_editor/example
+
+  native-package:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/flutter_monaco_editor_native
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter analyze

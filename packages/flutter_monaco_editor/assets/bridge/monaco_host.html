@@ -13,9 +13,46 @@
 <div id="monaco-root"></div>
 <script src="./monaco_bridge.js"></script>
 <script>
-  // Native transport will install its own emitter on monacoBridge.setEmitter
-  // (typically postMessage to a JavaScriptChannel) before calling bridge.init.
-  // This file is a stub host for Phase 4 — see PLAN.md.
+  // --------------------------------------------------------------------
+  // Native transport shim.
+  //
+  // The page runs inside `webview_flutter`. Dart <-> JS communication:
+  //   JS -> Dart:   FmeChannel.postMessage(JSON.stringify({type, payload}))
+  //   Dart -> JS:   WebViewController.runJavaScript("window.__fmeDispatch(...)")
+  // --------------------------------------------------------------------
+
+  (function () {
+    if (!window.monacoBridge) return;
+
+    // 1. Route monacoBridge.emit through the JavaScriptChannel.
+    window.monacoBridge.setEmitter(function (type, payload) {
+      try {
+        var msg = JSON.stringify({ type: type, payload: payload });
+        if (window.FmeChannel && typeof window.FmeChannel.postMessage === 'function') {
+          window.FmeChannel.postMessage(msg);
+        }
+      } catch (e) {
+        // Channel may not be ready during the very first frame — that's OK,
+        // Monaco will emit more events shortly.
+      }
+    });
+
+    // 2. Expose __fmeDispatch so Dart can call into monacoBridge asynchronously.
+    window.__fmeDispatch = function (frame) {
+      try {
+        var obj = typeof frame === 'string' ? JSON.parse(frame) : frame;
+        window.monacoBridge.invokeAsync(obj.callId, obj.method, obj.args || {});
+      } catch (e) {
+        window.monacoBridge.emit('_return', {
+          callId: (frame && frame.callId) || 'unknown',
+          error: String(e && e.message || e),
+        });
+      }
+    };
+
+    // 3. Kick off Monaco — the vs/ tree sits next to this HTML file.
+    window.monacoBridge.invoke('bridge.init', { vsPath: '../monaco-min/vs' });
+  })();
 </script>
 </body>
 </html>

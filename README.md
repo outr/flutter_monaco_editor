@@ -18,8 +18,8 @@ This repository is a monorepo.
 
 | Package | Description | Status |
 |---|---|---|
-| [`flutter_monaco_editor`](packages/flutter_monaco_editor) | Main package. Dart API + Web platform implementation. | Phase 1 |
-| `flutter_monaco_editor_native` | Webview implementation for Android, iOS, macOS, Windows, Linux. | Phase 4 |
+| [`flutter_monaco_editor`](packages/flutter_monaco_editor) | Main package. Dart API + Web platform implementation. | ✓ |
+| [`flutter_monaco_editor_native`](packages/flutter_monaco_editor_native) | Webview implementation for Android, iOS, macOS, Windows, Linux. | ✓ (MVP) |
 
 ## Platform support target
 

@@ -1,0 +1,25 @@
+name: flutter_monaco_editor_native
+description: Native platform (Android, iOS, macOS, Windows, Linux) implementation for flutter_monaco_editor — uses webview_flutter to host Monaco.
+version: 0.4.0-dev
+# publish_to: 'none' during dev — the path dep on flutter_monaco_editor is
+# a monorepo convenience. Remove this line and switch to a hosted version
+# constraint before publishing to pub.dev.
+publish_to: 'none'
+repository: https://github.com/outr/flutter_monaco_editor
+issue_tracker: https://github.com/outr/flutter_monaco_editor/issues
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_monaco_editor:
+    path: ../flutter_monaco_editor
+  webview_flutter: ^4.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
