@@ -1,6 +1,9 @@
 import 'enums.dart';
+import 'monaco_hover_options.dart';
 import 'monaco_minimap_options.dart';
+import 'monaco_padding_options.dart';
 import 'monaco_scrollbar_options.dart';
+import 'monaco_sticky_scroll_options.dart';
 
 /// Typed editor options corresponding to Monaco's `IEditorOptions`.
 ///
@@ -87,10 +90,33 @@ class MonacoEditorOptions {
     // Scroll
     this.mouseWheelScrollSensitivity,
     this.fastScrollSensitivity,
+    this.scrollPredominantAxis,
+
+    // Accessibility
+    this.accessibilitySupport,
+    this.accessibilityPageSize,
+
+    // Misc display / input
+    this.rulers,
+    this.showUnused,
+    this.emptySelectionClipboard,
+    this.useTabStops,
+    this.columnSelection,
+    this.renderControlCharacters,
+    this.disableLayerHinting,
+    this.disableMonospaceOptimizations,
+    this.hideCursorInOverviewRuler,
+    this.tabFocusMode,
+    this.multiCursorPaste,
+    this.wrappingIndent,
+    this.wrappingStrategy,
 
     // Nested
     this.minimap,
     this.scrollbar,
+    this.padding,
+    this.stickyScroll,
+    this.hover,
 
     // Escape hatch
     this.rawOptions,
@@ -171,10 +197,34 @@ class MonacoEditorOptions {
   // --- Scroll ---
   final double? mouseWheelScrollSensitivity;
   final double? fastScrollSensitivity;
+  final bool? scrollPredominantAxis;
+
+  // --- Accessibility ---
+  final MonacoAccessibilitySupport? accessibilitySupport;
+  final int? accessibilityPageSize;
+
+  // --- Misc display / input ---
+  /// Columns at which to render vertical guide lines.
+  final List<int>? rulers;
+  final bool? showUnused;
+  final bool? emptySelectionClipboard;
+  final bool? useTabStops;
+  final bool? columnSelection;
+  final bool? renderControlCharacters;
+  final bool? disableLayerHinting;
+  final bool? disableMonospaceOptimizations;
+  final bool? hideCursorInOverviewRuler;
+  final bool? tabFocusMode;
+  final MonacoMultiCursorPaste? multiCursorPaste;
+  final MonacoWrappingIndent? wrappingIndent;
+  final MonacoWrappingStrategy? wrappingStrategy;
 
   // --- Nested sub-options ---
   final MonacoMinimapOptions? minimap;
   final MonacoScrollbarOptions? scrollbar;
+  final MonacoPaddingOptions? padding;
+  final MonacoStickyScrollOptions? stickyScroll;
+  final MonacoEditorHoverOptions? hover;
 
   /// Raw option overrides. Merged into the final JSON after typed fields;
   /// any key here overrides the typed value.
@@ -264,10 +314,33 @@ class MonacoEditorOptions {
     // Scroll
     putIfNotNull('mouseWheelScrollSensitivity', mouseWheelScrollSensitivity);
     putIfNotNull('fastScrollSensitivity', fastScrollSensitivity);
+    putIfNotNull('scrollPredominantAxis', scrollPredominantAxis);
+
+    // Accessibility
+    putIfNotNull('accessibilitySupport', accessibilitySupport?.wireId);
+    putIfNotNull('accessibilityPageSize', accessibilityPageSize);
+
+    // Misc display / input
+    putIfNotNull('rulers', rulers);
+    putIfNotNull('showUnused', showUnused);
+    putIfNotNull('emptySelectionClipboard', emptySelectionClipboard);
+    putIfNotNull('useTabStops', useTabStops);
+    putIfNotNull('columnSelection', columnSelection);
+    putIfNotNull('renderControlCharacters', renderControlCharacters);
+    putIfNotNull('disableLayerHinting', disableLayerHinting);
+    putIfNotNull('disableMonospaceOptimizations', disableMonospaceOptimizations);
+    putIfNotNull('hideCursorInOverviewRuler', hideCursorInOverviewRuler);
+    putIfNotNull('tabFocusMode', tabFocusMode);
+    putIfNotNull('multiCursorPaste', multiCursorPaste?.wireId);
+    putIfNotNull('wrappingIndent', wrappingIndent?.wireId);
+    putIfNotNull('wrappingStrategy', wrappingStrategy?.wireId);
 
     // Nested
     if (minimap != null) out['minimap'] = minimap!.toJson();
     if (scrollbar != null) out['scrollbar'] = scrollbar!.toJson();
+    if (padding != null) out['padding'] = padding!.toJson();
+    if (stickyScroll != null) out['stickyScroll'] = stickyScroll!.toJson();
+    if (hover != null) out['hover'] = hover!.toJson();
 
     // Raw overrides win
     if (rawOptions != null) out.addAll(rawOptions!);
@@ -349,8 +422,35 @@ class MonacoEditorOptions {
           other.mouseWheelScrollSensitivity ?? mouseWheelScrollSensitivity,
       fastScrollSensitivity:
           other.fastScrollSensitivity ?? fastScrollSensitivity,
+      scrollPredominantAxis:
+          other.scrollPredominantAxis ?? scrollPredominantAxis,
+      accessibilitySupport:
+          other.accessibilitySupport ?? accessibilitySupport,
+      accessibilityPageSize:
+          other.accessibilityPageSize ?? accessibilityPageSize,
+      rulers: other.rulers ?? rulers,
+      showUnused: other.showUnused ?? showUnused,
+      emptySelectionClipboard:
+          other.emptySelectionClipboard ?? emptySelectionClipboard,
+      useTabStops: other.useTabStops ?? useTabStops,
+      columnSelection: other.columnSelection ?? columnSelection,
+      renderControlCharacters:
+          other.renderControlCharacters ?? renderControlCharacters,
+      disableLayerHinting:
+          other.disableLayerHinting ?? disableLayerHinting,
+      disableMonospaceOptimizations: other.disableMonospaceOptimizations ??
+          disableMonospaceOptimizations,
+      hideCursorInOverviewRuler:
+          other.hideCursorInOverviewRuler ?? hideCursorInOverviewRuler,
+      tabFocusMode: other.tabFocusMode ?? tabFocusMode,
+      multiCursorPaste: other.multiCursorPaste ?? multiCursorPaste,
+      wrappingIndent: other.wrappingIndent ?? wrappingIndent,
+      wrappingStrategy: other.wrappingStrategy ?? wrappingStrategy,
       minimap: other.minimap ?? minimap,
       scrollbar: other.scrollbar ?? scrollbar,
+      padding: other.padding ?? padding,
+      stickyScroll: other.stickyScroll ?? stickyScroll,
+      hover: other.hover ?? hover,
       rawOptions: {
         ...?rawOptions,
         ...?other.rawOptions,

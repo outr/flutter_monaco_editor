@@ -186,3 +186,56 @@ enum MonacoScrollbarVisibility {
 
   String get wireId => name;
 }
+
+/// `editor.wrappingIndent`.
+enum MonacoWrappingIndent {
+  none,
+  same,
+  indent,
+  deepIndent;
+
+  String get wireId => name;
+}
+
+/// `editor.wrappingStrategy`.
+enum MonacoWrappingStrategy {
+  simple,
+  advanced;
+
+  String get wireId => name;
+}
+
+/// `editor.multiCursorPaste`.
+enum MonacoMultiCursorPaste {
+  spread,
+  full;
+
+  String get wireId => name;
+}
+
+/// `editor.accessibilitySupport`.
+enum MonacoAccessibilitySupport {
+  auto,
+  on,
+  off;
+
+  String get wireId => name;
+}
+
+/// `editor.renderFinalNewline`.
+enum MonacoRenderFinalNewline {
+  on,
+  off,
+  dimmed;
+
+  String get wireId => name;
+}
+
+/// `editor.showFoldingControls`.
+enum MonacoShowFoldingControls {
+  always,
+  never,
+  mouseover;
+
+  String get wireId => name;
+}
