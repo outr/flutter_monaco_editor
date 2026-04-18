@@ -39,7 +39,7 @@ class _GalleryHomeState extends State<GalleryHome> {
   Widget build(BuildContext context) {
     final demo = demos[_selected];
     return Scaffold(
-      body: Row(
+      body: SafeArea(child: Row(
         children: [
           _SidebarRail(
             selected: _selected,
@@ -53,7 +53,7 @@ class _GalleryHomeState extends State<GalleryHome> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 }

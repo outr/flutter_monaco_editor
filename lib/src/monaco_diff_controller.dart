@@ -96,6 +96,12 @@ class MonacoDiffController {
         'language': _cachedLanguage,
         'theme': _cachedTheme,
         'renderSideBySide': _renderSideBySide,
+        // Monaco's default behavior is to auto-switch to inline view when
+        // the container is narrower than ~900px. That's great for web
+        // resizing but bad on mobile where you'd never see side-by-side.
+        // Honor the caller's explicit choice — if they say side-by-side,
+        // give them side-by-side regardless of width.
+        'useInlineViewWhenSpaceIsLimited': !_renderSideBySide,
         'readOnly': _readOnly,
         'ignoreTrimWhitespace': _ignoreTrimWhitespace,
         'automaticLayout': true,

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Allow cleartext traffic to 127.0.0.1 only — the WebView needs to reach
+  the in-process HTTP server that serves Monaco assets. All other hosts
+  follow Android's default cleartext-blocked behavior.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

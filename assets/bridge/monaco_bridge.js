@@ -657,7 +657,6 @@
     var opts = args.options || {};
     // eslint-disable-next-line no-undef
     var diff = monaco.editor.createDiffEditor(container, opts);
-
     // eslint-disable-next-line no-undef
     var originalModel = monaco.editor.createModel(opts.original || '', opts.language || 'plaintext');
     // eslint-disable-next-line no-undef

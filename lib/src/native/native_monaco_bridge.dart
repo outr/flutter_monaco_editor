@@ -110,19 +110,11 @@ class NativeMonacoBridge implements MonacoBridge {
   }
 
   Future<void> _bootstrap() async {
-    // Monaco is loaded via a small in-process HTTP server on 127.0.0.1
-    // rather than file://. This sidesteps the cross-origin / sub-resource
-    // restrictions several system WebViews (notably WebKitGTK) enforce
-    // for file:// pages — which would otherwise block Monaco's dynamic
-    // script loads and worker creation.
-    final server = await MonacoAssetServer.instance();
-    final url = '${server.baseUrl}/$_hostPath';
     _webController = WebViewController();
     await _webController.setJavaScriptMode(JavaScriptMode.unrestricted);
-    // Set a sensible default WebView background so the pre-Monaco
-    // loading state doesn't flash the webview's default (usually white).
-    // Transparent mode skips this — callers want their Flutter background
-    // visible behind the editor.
+    // Sensible pre-Monaco-load background: opaque vs-dark by default,
+    // transparent when the caller has requested it (so a Flutter layer
+    // behind the editor shows through during load).
     await _webController.setBackgroundColor(
       _transparent ? const Color(0x00000000) : const Color(0xFF1E1E1E),
     );
@@ -130,7 +122,26 @@ class NativeMonacoBridge implements MonacoBridge {
       _channelName,
       onMessageReceived: _onChannelMessage,
     );
-    await _webController.loadRequest(Uri.parse(url));
+
+    // Asset loading goes through an in-process HTTP server on 127.0.0.1.
+    //
+    // loadFlutterAsset looked simpler on mobile, but Android's WebView
+    // blocks `file://` sub-resource loads inside Web Workers — so
+    // Monaco's diff-compute worker fails to import its bundled script
+    // and the diff highlighting never renders. WebKitGTK on Linux has
+    // the same category of restriction. Loading via http://127.0.0.1
+    // sidesteps both.
+    //
+    // Platform setup requirements for apps that consume this package:
+    //   * Android: INTERNET permission + cleartext allowance for
+    //     127.0.0.1 (see the example's AndroidManifest.xml and
+    //     network_security_config.xml).
+    //   * iOS: NSAppTransportSecurity NSAllowsLocalNetworking=true
+    //     (mentioned in the example's Info.plist).
+    //   * macOS: no extra setup.
+    //   * Linux / Windows: no extra setup.
+    final server = await MonacoAssetServer.instance();
+    await _webController.loadRequest(Uri.parse('${server.baseUrl}/$_hostPath'));
   }
 
   /// Toggle the WebView's background at runtime. Pair with a matching
