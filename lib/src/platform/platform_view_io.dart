@@ -7,11 +7,10 @@ import '../native/native_platform_view.dart';
 
 /// Non-web platform view dispatcher.
 ///
-/// Android / iOS / macOS use `webview_flutter` (mobile-shaped WebView).
-/// Linux / Windows are not yet supported — see README for current status
-/// (we previously shipped a webview_cef integration but CEF proved
-/// unstable on KDE Plasma and other Wayland-first desktops; a
-/// WebKitGTK-based replacement is planned).
+/// All native platforms (Android, iOS, macOS, Windows, Linux) go through
+/// `NativeMonacoPlatformView`, which drives `webview_all`'s unified
+/// WebView API (WKWebView on Apple, WebView on Android, WebView2 on
+/// Windows, WebKitGTK on Linux).
 class MonacoPlatformView extends StatelessWidget {
   const MonacoPlatformView({
     super.key,
@@ -26,7 +25,11 @@ class MonacoPlatformView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+    if (Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isMacOS ||
+        Platform.isLinux ||
+        Platform.isWindows) {
       return NativeMonacoPlatformView(
         controller: controller,
         onChanged: onChanged,
@@ -37,10 +40,7 @@ class MonacoPlatformView extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(24),
         child: Text(
-          'flutter_monaco_editor: Linux and Windows are not yet supported '
-          'as native binaries.\n\nRun the web build instead: '
-          '`flutter run -d chrome`, or serve the release build and use '
-          '`chromium --app=<url>` for a desktop-like window.',
+          'flutter_monaco_editor: this platform has no Monaco transport.',
           textAlign: TextAlign.center,
         ),
       ),

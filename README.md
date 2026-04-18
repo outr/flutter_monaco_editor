@@ -26,25 +26,35 @@ MonacoEditor(
 
 ## Platform support
 
-| Platform | Transport | Notes |
+| Platform | Host | Implementation |
 |---|---|---|
-| Web | `dart:js_interop` | Monaco loads directly in the host document |
-| Android, iOS, macOS | [`webview_flutter`](https://pub.dev/packages/webview_flutter) | One WebView per editor |
-| Linux, Windows | — | Not yet supported as native binaries. **Use the web build.** See below. |
+| Web | main document | `dart:js_interop` |
+| Android | SDK 24+ | system WebView (via `webview_all` → WKWebView / WebView2 / WebKitGTK / WebView) |
+| iOS | 13.0+ | WKWebView |
+| macOS | 10.15+ | WKWebView |
+| Windows | Win10 1809+ | WebView2 |
+| Linux | webkit2gtk-4.1 | WebKitGTK |
 
-Monaco's JavaScript API is identical regardless of hosting. One Dart API, one shared JS bridge, two transports that Dart picks automatically (conditional imports + runtime `Platform.isXxx` dispatch).
+Monaco's JavaScript API is identical regardless of hosting — one Dart API, one shared JS bridge, picked per platform automatically.
 
-### Linux / Windows
+### Linux setup
 
-We previously shipped a `webview_cef`-based integration, but CEF proved unstable on KDE Plasma / Wayland and on other desktop configurations — crashing compositors rather than just the app. Until a stable embedded webview is available on those platforms (WebKitGTK FFI is a candidate for the next iteration), use the web build:
+Install the system WebKitGTK dev headers (package name varies by distro):
 
 ```sh
-cd example && flutter build web --release
-python3 -m http.server --directory build/web 8765 &
-chromium --app=http://localhost:8765
+# Debian/Ubuntu
+sudo apt install libwebkit2gtk-4.1-dev
+# Fedora
+sudo dnf install webkit2gtk4.1-devel
+# Arch
+sudo pacman -S webkit2gtk-4.1
 ```
 
-That gives a chromeless, desktop-feeling window on any Linux or Windows machine with Chromium / Chrome / Edge installed.
+The included example's `linux/runner/my_application.cc` already has the `GtkOverlay` wrapper that `webview_all` requires. If you copy the app layout into a new project, see `example/linux/runner/my_application.cc` for the pattern.
+
+### Windows setup
+
+Windows 10/11 ship `WebView2` automatically. No additional setup needed.
 
 ## Running the example
 
