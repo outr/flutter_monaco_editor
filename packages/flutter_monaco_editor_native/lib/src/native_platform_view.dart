@@ -13,10 +13,12 @@ class NativeMonacoPlatformView extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onChanged,
+    required this.transparent,
   });
 
   final MonacoController controller;
   final ValueChanged<String>? onChanged;
+  final bool transparent;
 
   @override
   State<NativeMonacoPlatformView> createState() =>
@@ -56,7 +58,7 @@ class _NativeMonacoPlatformViewState extends State<NativeMonacoPlatformView> {
     // The first bridge created also becomes the shared one used by
     // global APIs (MonacoLanguages / MonacoThemes) — see
     // NativeMonacoBridge.instance().
-    final bridge = await NativeMonacoBridge.create();
+    final bridge = await NativeMonacoBridge.create(transparent: widget.transparent);
     if (!mounted) {
       unawaited(bridge.dispose());
       return;

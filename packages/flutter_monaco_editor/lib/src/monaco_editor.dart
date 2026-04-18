@@ -23,6 +23,7 @@ class MonacoEditor extends StatefulWidget {
     this.readOnly = false,
     this.options,
     this.onChanged,
+    this.transparent = false,
   }) : assert(
           controller == null ||
               (initialValue == '' &&
@@ -58,6 +59,18 @@ class MonacoEditor extends StatefulWidget {
   /// Shortcut callback that fires on content changes. Equivalent to
   /// `controller.onDidChangeContent.listen(...)`.
   final ValueChanged<String>? onChanged;
+
+  /// When true, the underlying editor host has a transparent background.
+  ///
+  /// - **Web**: the host div has no background of its own, so transparency
+  ///   is governed by the active Monaco theme's `editor.background` color.
+  ///   Use `MonacoTheme.transparent()` (or a theme with alpha=0 backgrounds)
+  ///   alongside this flag to reveal a Flutter background image behind
+  ///   the editor.
+  /// - **Native (webview)**: the underlying WebView's background color is
+  ///   set to transparent. Combined with a transparent theme, a Flutter
+  ///   widget behind the editor shows through.
+  final bool transparent;
 
   @override
   State<MonacoEditor> createState() => _MonacoEditorState();
@@ -113,6 +126,7 @@ class _MonacoEditorState extends State<MonacoEditor> {
     return MonacoPlatformView(
       controller: _effectiveController,
       onChanged: widget.onChanged,
+      transparent: widget.transparent,
     );
   }
 }

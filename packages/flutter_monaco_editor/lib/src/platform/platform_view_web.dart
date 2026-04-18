@@ -12,10 +12,17 @@ class MonacoPlatformView extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onChanged,
+    this.transparent = false,
   });
 
   final MonacoController controller;
   final ValueChanged<String>? onChanged;
+
+  /// On web, transparency is controlled entirely by the active Monaco theme
+  /// (`editor.background` and related keys) — the host div has no
+  /// background of its own. This flag is accepted for API symmetry with
+  /// the native path.
+  final bool transparent;
 
   @override
   State<MonacoPlatformView> createState() => _MonacoPlatformViewState();
@@ -72,14 +79,29 @@ class _MonacoPlatformViewState extends State<MonacoPlatformView> {
 
     setState(() => _viewType = viewType);
 
+    // Wait for the factory to fire, then for Flutter to finish the frame
+    // where it attaches the div to the DOM. `Duration.zero` is a microtask —
+    // Flutter's frame pipeline hasn't necessarily run by then, so
+    // document.getElementById can return null. endOfFrame is the right hook.
     await _containerReady!.future;
-    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
 
     final editorId = await bridge.invoke('editor.create', {
       'containerId': containerId,
       'options': widget.controller.buildCreateOptions(),
     }) as String;
+    if (!mounted) {
+      // Widget was unmounted while editor.create was in-flight. Clean up the
+      // orphan editor on the JS side so it doesn't leak.
+      unawaited(bridge.invoke('editor.dispose', {'editorId': editorId}));
+      return;
+    }
+    if (widget.controller.isDisposed) {
+      unawaited(bridge.invoke('editor.dispose', {'editorId': editorId}));
+      return;
+    }
     _editorId = editorId;
     widget.controller.attach(bridge, editorId);
   }

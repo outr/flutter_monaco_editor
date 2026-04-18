@@ -11,15 +11,17 @@ class MonacoPlatformView extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onChanged,
+    this.transparent = false,
   });
 
   final MonacoController controller;
   final ValueChanged<String>? onChanged;
+  final bool transparent;
 
   @override
   Widget build(BuildContext context) {
     final factory = MonacoPlatformHooks.platformViewFactory;
-    if (factory != null) return factory(controller, onChanged);
+    if (factory != null) return factory(controller, onChanged, transparent);
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(24),

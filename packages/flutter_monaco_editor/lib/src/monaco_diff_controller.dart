@@ -49,6 +49,8 @@ class MonacoDiffController {
   String get language => _cachedLanguage;
   String get theme => _cachedTheme;
   bool get isAttached => _bridge != null && _diffId != null;
+
+  /// Whether [dispose] has been called on this controller.
   bool get isDisposed => _disposed;
   Future<void> get ready => _readyCompleter.future;
 

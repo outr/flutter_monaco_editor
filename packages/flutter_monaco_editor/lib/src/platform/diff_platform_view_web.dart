@@ -49,14 +49,21 @@ class _MonacoDiffPlatformViewState extends State<MonacoDiffPlatformView> {
 
     setState(() => _viewType = viewType);
 
+    // See platform_view_web.dart — Flutter's HtmlElementView insertion is
+    // frame-scheduled, so a microtask is not enough.
     await _containerReady!.future;
-    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
 
     final diffId = await bridge.invoke('diff.create', {
       'containerId': containerId,
       'options': widget.controller.buildCreateOptions(),
     }) as String;
+    if (!mounted || widget.controller.isDisposed) {
+      unawaited(bridge.invoke('diff.dispose', {'diffId': diffId}));
+      return;
+    }
     _diffId = diffId;
     widget.controller.attach(bridge, diffId);
   }

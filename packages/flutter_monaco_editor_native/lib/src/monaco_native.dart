@@ -27,10 +27,11 @@ class MonacoNative {
     _registered = true;
     MonacoPlatformHooks.install(
       bridgeFactory: NativeMonacoBridge.instance,
-      platformViewFactory: (controller, onChanged) =>
+      platformViewFactory: (controller, onChanged, transparent) =>
           NativeMonacoPlatformView(
         controller: controller,
         onChanged: onChanged,
+        transparent: transparent,
       ),
     );
   }

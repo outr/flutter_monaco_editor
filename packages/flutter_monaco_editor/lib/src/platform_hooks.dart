@@ -28,8 +28,11 @@ class MonacoPlatformHooks {
 
   /// Factory for building the platform view that hosts a Monaco editor on
   /// non-web platforms.
-  static Widget Function(MonacoController controller, ValueChanged<String>? onChanged)?
-      platformViewFactory;
+  static Widget Function(
+    MonacoController controller,
+    ValueChanged<String>? onChanged,
+    bool transparent,
+  )? platformViewFactory;
 
   /// Install a native implementation. Idempotent: only the first call
   /// takes effect, so apps are safe to call from multiple entrypoints.
@@ -38,6 +41,7 @@ class MonacoPlatformHooks {
     required Widget Function(
       MonacoController controller,
       ValueChanged<String>? onChanged,
+      bool transparent,
     ) platformViewFactory,
   }) {
     MonacoPlatformHooks.bridgeFactory ??= bridgeFactory;

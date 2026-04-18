@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'actions_demo.dart';
+import 'background_demo.dart';
 import 'basic_demo.dart';
 import 'diagnostics_demo.dart';
 import 'diff_demo.dart';
@@ -72,6 +73,12 @@ const List<Demo> demos = [
     blurb: 'Define named themes at runtime and switch between them globally.',
     icon: Icons.palette_outlined,
     builder: ThemesDemo.builder,
+  ),
+  Demo(
+    label: 'Custom Background',
+    blurb: 'Layer the editor on a Flutter-rendered background with transparent: true.',
+    icon: Icons.wallpaper,
+    builder: BackgroundDemo.builder,
   ),
 ];
 

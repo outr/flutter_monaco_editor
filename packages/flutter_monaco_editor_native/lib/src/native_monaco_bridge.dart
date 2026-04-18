@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show Color;
 
 import 'package:flutter_monaco_editor/flutter_monaco_editor.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -12,7 +13,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 /// [instance] so global APIs (language providers) have somewhere to
 /// register. See README for limitations.
 class NativeMonacoBridge implements MonacoBridge {
-  NativeMonacoBridge._();
+  NativeMonacoBridge._({bool transparent = false}) : _transparent = transparent;
+
+  bool _transparent;
 
   /// The Flutter asset key for the bundled HTML host page.
   static const String _hostAssetKey =
@@ -28,12 +31,7 @@ class NativeMonacoBridge implements MonacoBridge {
   /// Returns the "shared" bridge for process-global APIs — language
   /// providers ([MonacoLanguages]), theme registration ([MonacoThemes]).
   /// On native, each editor widget has its own WebView, so these global
-  /// APIs operate only on the first-created bridge. Document accordingly
-  /// when using them in a multi-editor native UI.
-  ///
-  /// If no widget has created a bridge yet, one is created on demand
-  /// (headless — no attached editor). The first widget to mount will
-  /// adopt it if it's still around.
+  /// APIs operate only on the first-created bridge.
   static Future<NativeMonacoBridge> instance() async {
     final existing = _shared;
     if (existing != null && !existing._disposed) return existing;
@@ -41,10 +39,14 @@ class NativeMonacoBridge implements MonacoBridge {
   }
 
   /// Create a new, isolated bridge + WebView host. Each call yields a
-  /// fresh Monaco runtime — this is what each [NativeMonacoPlatformView]
-  /// uses, giving one editor per WebView.
-  static Future<NativeMonacoBridge> create() async {
-    final bridge = NativeMonacoBridge._();
+  /// fresh Monaco runtime.
+  ///
+  /// When [transparent] is true, the underlying WebView is created with
+  /// a transparent background, so a Flutter widget (e.g. an image) behind
+  /// the editor shows through any transparent regions of the active
+  /// Monaco theme.
+  static Future<NativeMonacoBridge> create({bool transparent = false}) async {
+    final bridge = NativeMonacoBridge._(transparent: transparent);
     await bridge._bootstrap();
     _shared ??= bridge;
     return bridge;
@@ -105,13 +107,24 @@ class NativeMonacoBridge implements MonacoBridge {
   Future<void> _bootstrap() async {
     _webController = WebViewController();
     await _webController.setJavaScriptMode(JavaScriptMode.unrestricted);
+    if (_transparent) {
+      await _webController.setBackgroundColor(const Color(0x00000000));
+    }
     await _webController.addJavaScriptChannel(
       _channelName,
       onMessageReceived: _onChannelMessage,
     );
-    // The emitter shim + __fmeDispatch wiring is baked into monaco_host.html;
-    // runJavaScript is post-load, so we rely on the page's inline <script>.
     await _webController.loadFlutterAsset(_hostAssetKey);
+  }
+
+  /// Toggle the WebView's background at runtime. Useful for apps that
+  /// want to start opaque and switch to transparent without recreating
+  /// the editor.
+  Future<void> setTransparent(bool transparent) async {
+    _transparent = transparent;
+    await _webController.setBackgroundColor(
+      transparent ? const Color(0x00000000) : const Color(0xFF000000),
+    );
   }
 
   void _onChannelMessage(JavaScriptMessage message) {

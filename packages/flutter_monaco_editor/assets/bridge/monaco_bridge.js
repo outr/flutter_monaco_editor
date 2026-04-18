@@ -179,8 +179,31 @@
 
   handlers['editor.create'] = function (args) {
     var container = document.getElementById(args.containerId);
-    if (!container) throw new Error('editor.create: container "' + args.containerId + '" not in DOM');
+    // Flutter's HtmlElementView insertion is frame-scheduled. Even with
+    // endOfFrame awaits on the Dart side, we occasionally see a one-frame
+    // lag on web. Poll briefly before failing.
+    if (!container) {
+      return new Promise(function (resolve, reject) {
+        var tries = 0;
+        var maxTries = 20; // 20 * 25ms = 500ms budget
+        var t = setInterval(function () {
+          tries++;
+          var c = document.getElementById(args.containerId);
+          if (c) {
+            clearInterval(t);
+            try { resolve(_createEditorOn(c, args)); }
+            catch (e) { reject(e); }
+          } else if (tries >= maxTries) {
+            clearInterval(t);
+            reject(new Error('editor.create: container "' + args.containerId + '" not in DOM after ' + (maxTries * 25) + 'ms'));
+          }
+        }, 25);
+      });
+    }
+    return _createEditorOn(container, args);
+  };
 
+  function _createEditorOn(container, args) {
     var editorId = String(bridge._nextEditorId++);
     // eslint-disable-next-line no-undef
     var editor = monaco.editor.create(container, args.options || {});
@@ -223,7 +246,7 @@
 
     bridge._editors[editorId] = { editor: editor, disposers: disposers };
     return editorId;
-  };
+  }
 
   handlers['editor.getValue'] = function (args) {
     return _entry(args.editorId).editor.getValue();
@@ -607,7 +630,29 @@
 
   handlers['diff.create'] = function (args) {
     var container = document.getElementById(args.containerId);
-    if (!container) throw new Error('diff.create: container "' + args.containerId + '" not in DOM');
+    if (!container) {
+      // Same platform-view-mount race as editor.create — poll briefly.
+      return new Promise(function (resolve, reject) {
+        var tries = 0;
+        var maxTries = 20;
+        var t = setInterval(function () {
+          tries++;
+          var c = document.getElementById(args.containerId);
+          if (c) {
+            clearInterval(t);
+            try { resolve(_createDiffOn(c, args)); }
+            catch (e) { reject(e); }
+          } else if (tries >= maxTries) {
+            clearInterval(t);
+            reject(new Error('diff.create: container "' + args.containerId + '" not in DOM after ' + (maxTries * 25) + 'ms'));
+          }
+        }, 25);
+      });
+    }
+    return _createDiffOn(container, args);
+  };
+
+  function _createDiffOn(container, args) {
     var diffId = 'diff-' + (bridge._nextDiffId++);
     var opts = args.options || {};
     // eslint-disable-next-line no-undef
@@ -630,7 +675,7 @@
 
     bridge._diffs[diffId] = { diff: diff, originalModel: originalModel, modifiedModel: modifiedModel, disposers: disposers };
     return diffId;
-  };
+  }
 
   handlers['diff.setOriginal'] = function (args) {
     _diffEntry(args.diffId).originalModel.setValue(args.value == null ? '' : String(args.value));
