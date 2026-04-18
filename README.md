@@ -1,10 +1,18 @@
 # flutter_monaco_editor
 
+[![pub package](https://img.shields.io/pub/v/flutter_monaco_editor.svg)](https://pub.dev/packages/flutter_monaco_editor)
+[![pub points](https://img.shields.io/pub/points/flutter_monaco_editor)](https://pub.dev/packages/flutter_monaco_editor/score)
+[![pub likes](https://img.shields.io/pub/likes/flutter_monaco_editor)](https://pub.dev/packages/flutter_monaco_editor)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/outr/flutter_monaco_editor/actions/workflows/ci.yml/badge.svg)](https://github.com/outr/flutter_monaco_editor/actions/workflows/ci.yml)
+
 A complete Flutter wrapper for [Monaco Editor](https://github.com/microsoft/monaco-editor) (the editor that powers VS Code) with **full API parity** across Web, Android, iOS, macOS, Windows, and Linux.
 
 ## ▶ [Try the live demo →](https://outr.github.io/flutter_monaco_editor/)
 
 No install required — the example gallery (9 demos covering every API surface) is deployed to GitHub Pages straight from this repo. Check out the editor, diff view, IntelliSense, custom themes, and the transparent-background showcase right in your browser.
+
+[![Gallery screenshot](docs/screenshots/gallery.png)](https://outr.github.io/flutter_monaco_editor/)
 
 ## Status
 

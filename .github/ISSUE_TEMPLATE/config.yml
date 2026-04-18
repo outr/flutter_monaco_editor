@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Live demo
+    url: https://outr.github.io/flutter_monaco_editor/
+    about: Try the editor in your browser before filing a bug — it might behave differently than in your app and help isolate the issue.
+  - name: Monaco Editor docs
+    url: https://microsoft.github.io/monaco-editor/typedoc/
+    about: For questions about what Monaco itself can do (vs. what this wrapper exposes).
+  - name: pub.dev package page
+    url: https://pub.dev/packages/flutter_monaco_editor
+    about: Installation instructions, version history, score, scoring feedback.

@@ -1,0 +1,80 @@
+name: Bug report
+description: Something doesn't work the way the README / docs / example suggests it should.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please fill out as much as you can — reproductions with a minimal code snippet get triaged fastest.
+
+  - type: input
+    id: version
+    attributes:
+      label: flutter_monaco_editor version
+      description: From your pubspec.yaml / pub.dev page.
+      placeholder: "0.5.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform(s) affected
+      multiple: true
+      options:
+        - Web
+        - Android
+        - iOS
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: true
+
+  - type: input
+    id: flutter-version
+    attributes:
+      label: "Flutter version (output of `flutter --version` first line)"
+      placeholder: "Flutter 3.41.5 • channel stable"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior. A screenshot or short video clip is very helpful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: |
+        Ideally a short Dart snippet (controller + widget tree) and the bundled Monaco language / theme / options you used. If the issue is platform-specific, include any platform scaffolding changes (AndroidManifest edits, linux/runner/my_application.cc, Info.plist keys).
+      render: dart
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console / logcat output
+      description: "`flutter run` output, WebView console logs if accessible."
+      render: shell
+
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Housekeeping
+      options:
+        - label: I checked [existing issues](https://github.com/outr/flutter_monaco_editor/issues) for duplicates.
+          required: true

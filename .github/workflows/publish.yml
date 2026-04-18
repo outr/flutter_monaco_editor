@@ -1,0 +1,35 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+
+# Required for the OIDC token used by pub.dev's trusted publisher flow.
+# Set up on the package page at:
+#   pub.dev/packages/flutter_monaco_editor/admin
+# under "Automated publishing" → add the outr/flutter_monaco_editor
+# repository and the `pub.yml` workflow.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      # dart-lang/setup-dart/.github/workflows/publish.yml does the
+      # OIDC-based pub.dev auth handshake and `dart pub publish` under
+      # the hood.
+      - uses: dart-lang/setup-dart@v1
+      - name: Publish
+        run: dart pub publish --force

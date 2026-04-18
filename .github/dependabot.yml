@@ -1,0 +1,34 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "dart"
+    # Don't auto-bump Flutter SDK-pinned packages — let humans decide
+    # when to move the Flutter floor.
+    ignore:
+      - dependency-name: "flutter"
+      - dependency-name: "flutter_test"
+
+  - package-ecosystem: "pub"
+    directory: "/example"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "dart"
+      - "example"
+    ignore:
+      - dependency-name: "flutter"
+      - dependency-name: "flutter_test"

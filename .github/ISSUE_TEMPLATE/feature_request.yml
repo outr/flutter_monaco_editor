@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a new API, option, or behavior.
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The goal of this package is **full Monaco API parity**, so "expose this Monaco feature" requests are very welcome. For entirely new behaviors, a short motivation helps us understand the use case.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the use case, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: monaco-api
+    attributes:
+      label: Corresponding Monaco API (if any)
+      description: |
+        Link to the Monaco docs / type definition. Helps us judge scope and implementation effort.
+      placeholder: "https://microsoft.github.io/monaco-editor/typedoc/..."
+
+  - type: textarea
+    id: sketch
+    attributes:
+      label: Rough Dart API sketch (optional)
+      render: dart
+      placeholder: |
+        final controller = MonacoController(...);
+        await controller.newFeature(...);
+
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Which platforms need this?
+      multiple: true
+      options:
+        - All
+        - Web only
+        - Mobile (Android, iOS)
+        - Desktop (macOS, Linux, Windows)
+        - Specific platform (mention in description)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: Willing to help?
+      options:
+        - label: I'd be willing to open a PR (help welcome — ask in the issue before starting).
