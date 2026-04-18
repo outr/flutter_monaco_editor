@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webview_all/webview_all.dart';
 
@@ -63,7 +65,9 @@ class _NativeMonacoPlatformViewState extends State<NativeMonacoPlatformView> {
       unawaited(bridge.dispose());
       return;
     }
-    _bridge = bridge;
+    // Trigger a rebuild so build() switches from the "Loading…" placeholder
+    // to WebViewWidget(controller: bridge.webViewController).
+    setState(() => _bridge = bridge);
 
     final editorId = await bridge.invoke('editor.create', {
       // There's no external DOM container on native — JS uses the
@@ -98,6 +102,54 @@ class _NativeMonacoPlatformViewState extends State<NativeMonacoPlatformView> {
     if (bridge == null) {
       return const Center(child: Text('Loading editor…'));
     }
-    return WebViewWidget(controller: bridge.webViewController);
+    return _AlwaysRepaint(
+      child: WebViewWidget(controller: bridge.webViewController),
+    );
+  }
+}
+
+/// Forces a paint cycle every frame on the wrapped subtree — without
+/// recreating any widgets. The webview child keeps its State.
+///
+/// Needed because `webview_all_linux`'s platform-view hides its
+/// underlying GtkWidget the moment a frame goes by where our
+/// RenderObject's `paint()` wasn't called. In a static widget tree Flutter
+/// optimizes away redundant paints, so the webview disappears after the
+/// first render. Here we push `markNeedsPaint` after every paint, keeping
+/// the paint path active. Cost: one repaint per frame on this subtree —
+/// cheap since the child is just a platform view pass-through.
+class _AlwaysRepaint extends SingleChildRenderObjectWidget {
+  const _AlwaysRepaint({required Widget child}) : super(child: child);
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _AlwaysRepaintBox();
+}
+
+class _AlwaysRepaintBox extends RenderProxyBox {
+  int _frameCallbackId = -1;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    super.paint(context, offset);
+    // Schedule a paint for the next frame. We cancel+re-schedule to avoid
+    // stacking callbacks during unusual pipeline orderings.
+    if (_frameCallbackId != -1) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(_frameCallbackId);
+    }
+    _frameCallbackId =
+        SchedulerBinding.instance.scheduleFrameCallback((_) {
+      _frameCallbackId = -1;
+      if (attached) markNeedsPaint();
+    });
+  }
+
+  @override
+  void detach() {
+    if (_frameCallbackId != -1) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(_frameCallbackId);
+      _frameCallbackId = -1;
+    }
+    super.detach();
   }
 }

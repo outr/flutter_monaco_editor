@@ -5,6 +5,7 @@ import 'dart:ui' show Color;
 import 'package:webview_all/webview_all.dart';
 
 import '../bridge/bridge.dart';
+import 'asset_server.dart';
 
 /// Webview-backed MonacoBridge for native platforms.
 ///
@@ -18,8 +19,11 @@ class NativeMonacoBridge implements MonacoBridge {
 
   bool _transparent;
 
-  /// The Flutter asset key for the bundled HTML host page.
-  static const String _hostAssetKey =
+  /// Path segment appended to the asset server's base URL to reach the
+  /// host HTML. Matches the on-disk path under the Flutter asset bundle
+  /// so relative refs inside the HTML (`./monaco_bridge.js`, `../monaco-min/vs`)
+  /// resolve correctly.
+  static const String _hostPath =
       'packages/flutter_monaco_editor/assets/bridge/monaco_host.html';
 
   /// The JavaScriptChannel name used by `monaco_bridge.js` to post events
@@ -106,6 +110,13 @@ class NativeMonacoBridge implements MonacoBridge {
   }
 
   Future<void> _bootstrap() async {
+    // Monaco is loaded via a small in-process HTTP server on 127.0.0.1
+    // rather than file://. This sidesteps the cross-origin / sub-resource
+    // restrictions several system WebViews (notably WebKitGTK) enforce
+    // for file:// pages — which would otherwise block Monaco's dynamic
+    // script loads and worker creation.
+    final server = await MonacoAssetServer.instance();
+    final url = '${server.baseUrl}/$_hostPath';
     _webController = WebViewController();
     await _webController.setJavaScriptMode(JavaScriptMode.unrestricted);
     if (_transparent) {
@@ -115,7 +126,7 @@ class NativeMonacoBridge implements MonacoBridge {
       _channelName,
       onMessageReceived: _onChannelMessage,
     );
-    await _webController.loadFlutterAsset(_hostAssetKey);
+    await _webController.loadRequest(Uri.parse(url));
   }
 
   /// Toggle the WebView's background at runtime. Useful for apps that
