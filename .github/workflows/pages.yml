@@ -29,7 +29,7 @@ jobs:
         # (https://outr.github.io/flutter_monaco_editor/).
         run: flutter build web --release --base-href /flutter_monaco_editor/
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: example/build/web
 
