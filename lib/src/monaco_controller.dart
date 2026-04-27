@@ -96,6 +96,11 @@ class MonacoController {
     _disposed = true;
     await _eventsSub?.cancel();
     _eventsSub = null;
+    if (_bridge != null) {
+      try {
+        await _bridge!.invoke('feeef.clearCustomPropsTypes');
+      } catch (_) {}
+    }
     if (_bridge != null && _editorId != null) {
       unawaited(_bridge!.invoke('editor.dispose', {'editorId': _editorId!}));
     }
@@ -166,6 +171,18 @@ class MonacoController {
     await _bridge!.invoke('editor.setLanguage', {
       'editorId': _editorId!,
       'language': language,
+    });
+  }
+
+  /// Registers or replaces the virtual `file:///feeef/dynamic-props.d.ts` with
+  /// TypeScript for `const props: …` (Feeef template propsSchema in the
+  /// merchant app). The bridge disposes a previous registration when this is
+  /// called again; [dispose] clears it as well.
+  Future<void> setCustomPropsTypeScript(String content) async {
+    _assertNotDisposed();
+    await ready;
+    await _bridge!.invoke('feeef.setCustomPropsTypes', {
+      'content': content,
     });
   }
 

@@ -115,9 +115,7 @@ class NativeMonacoBridge implements MonacoBridge {
     // Sensible pre-Monaco-load background: opaque vs-dark by default,
     // transparent when the caller has requested it (so a Flutter layer
     // behind the editor shows through during load).
-    await _webController.setBackgroundColor(
-      _transparent ? const Color(0x00000000) : const Color(0xFF1E1E1E),
-    );
+    await _setWebViewBackgroundColor();
     await _webController.addJavaScriptChannel(
       _channelName,
       onMessageReceived: _onChannelMessage,
@@ -149,9 +147,23 @@ class NativeMonacoBridge implements MonacoBridge {
   /// be visible.
   Future<void> setTransparent(bool transparent) async {
     _transparent = transparent;
-    await _webController.setBackgroundColor(
-      transparent ? const Color(0x00000000) : const Color(0xFF1E1E1E),
-    );
+    await _setWebViewBackgroundColor();
+  }
+
+  /// Best-effort WebView background before Monaco loads / when toggling transparency.
+  ///
+  /// On **macOS**, `setBackgroundColor` can throw [UnimplementedError] because
+  /// the embedded WKWebView path does not implement `setOpaque` for `NSView`
+  /// (see flutter/flutter#153773). Catching that allows the bridge to load; the
+  /// pre-paint background may differ until Monaco renders.
+  Future<void> _setWebViewBackgroundColor() async {
+    try {
+      await _webController.setBackgroundColor(
+        _transparent ? const Color(0x00000000) : const Color(0xFF1E1E1E),
+      );
+    } on UnimplementedError {
+      // Tracked upstream: webview background / opaque on macOS (NSView).
+    }
   }
 
   void _onChannelMessage(JavaScriptMessage message) {
